@@ -996,3 +996,45 @@ async def upload_sds_file_to_location(
         "error_message": err.get("error_message", "Unknown error"),
         "instruction": f"Upload failed: {err.get('error_message', 'Unknown error')}",
     }
+
+
+@mcp.tool()
+async def upload_sds_file_to_location(pdf_content: bytes, department_id: str) -> dict:
+    """
+    Upload an SDS file to the specified location in the SDS Manager system.
+    """
+
+    # info = redis_client.get(f"sds_mcp:{session_id}")
+
+    # if not info:
+    #     return {
+    #         "status": "error",
+    #         "error": "Access token not found in session",
+    #         "instruction": "Session expired. Please login again using the login tool."
+    #     }
+
+    # headers = {SDS_HEADER_NAME: f"{info.get('access_token')}"}
+
+    return {
+        "pdf_content": pdf_content,
+        "length": len(pdf_content),
+        "department_id": department_id,
+    }
+
+    # response = requests.post(
+    #     f"{BACKEND_URL}/location/{department_id}/uploadSDS/",
+    #     headers=headers,
+    #     files={"imported_file": pdf_content}
+    # )
+
+    # if response.status_code == 200:
+    #     return response.json()
+    # else:
+    #     return {
+    #         "status": "error",
+    #         "error": f"Add location error with status {response.status_code}",
+    #         "instruction": "Failed to add location. Please try again or contact support."
+    #     }
+
+
+    
