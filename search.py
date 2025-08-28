@@ -884,9 +884,17 @@ async def get_sdss_with_ingredients(session_id: str, query: str = "", page: int 
 
 
 @mcp.tool()
-async def upload_sds_file_to_location(pdf_content: bytes, department_id: str) -> dict:
+async def upload_sds_file_to_location(pdf_content_base64: str, department_id: str) -> dict:
     """
-    Upload an SDS file to the specified location in the SDS Manager system.
+    Upload a SDS file to the specified location in the SDS Manager system.
+
+    When user upload a SDS file, must convert it to base64 string and pass it to this tool.
+
+    ARGUMENTS:
+        pdf_content_base64 (str): Base64 encoded PDF content.
+        department_id (str): ID of the department to upload the SDS file to.
+
+    RETURN:
     """
 
     # info = redis_client.get(f"sds_mcp:{session_id}")
@@ -901,8 +909,8 @@ async def upload_sds_file_to_location(pdf_content: bytes, department_id: str) ->
     # headers = {SDS_HEADER_NAME: f"{info.get('access_token')}"}
 
     return {
-        "pdf_content": pdf_content,
-        "length": len(pdf_content),
+        "pdf_content_base64": pdf_content_base64,
+        "length": len(pdf_content_base64),
         "department_id": department_id,
     }
 
