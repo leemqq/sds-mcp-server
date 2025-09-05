@@ -930,4 +930,69 @@ async def upload_sds_file_to_location(pdf_content_base64: str, department_id: st
     #     }
 
 
+@mcp.tool(title="Import Product List")
+async def upload_product_list(session_id: str, extracted_data: str, file_content: bytes, file_name: str) -> Dict[str, Any]:
+    """
+    Upload csv, xlsx, xls files to add subtance list.
+    REQUIRED: User must be authenticated using the login tool first.
+    IMPORTANT GUIDELINES:
+    - Extract the data from the excel file to extracted_data.
+    - Extracted data format: [{"PRODUCT_NAME": "Product Name", "SUPPLIER_OF_SDS": "Supplier of SDS", "PRODUCT_CODE": "Product Code", "CAS_NO": "CAS No", "VENDOR_EMAIL": "Vendor Email", "AMOUNT": "Amount", "AMOUNT_UNIT": "Amount Unit", "LOCATION": "Location", "LINK_TO_SDS": "Link to SDS", "SKU": "SKU", "EXTERNAL_SYSTEM_ID": "External System ID"}]
+    """
+    endpoint = f"{BACKEND_URL}/substance/uploadProductList/"
+    if not session_id:
+        return {
+            "status": "error",
+            "error": "No active session found",
+            "instruction": "Please login first using the login tool with your access token"
+        }
+    info = redis_client.get(f"sds_mcp:{session_id}")
+    if not info:
+        return {
+            "status": "error",
+            "error": "Access token not found in session",
+            "instruction": "Session expired. Please login again using the login tool."
+        }
+    headers = {SDS_HEADER_NAME: f"{info.get('access_token')}"}
+    
+    try:
+        response = requests.post(
+            endpoint,
+            headers=headers,
+            data={
+                "extracted": extracted_data,
+                "file": (file_name, file_content, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+            },
+            timeout=20
+        )
+        if response.status_code in [200, 201]:
+            return {
+                "status": "success",
+            }
+        elif response.status_code == 401:
+            redis_client.delete(f"sds_mcp:{session_id}")
+            return {
+                "status": "error",
+                "error": "Authentication expired",
+                "instruction": "Your session has expired. Please login again with your access token."
+            }
+        else:
+            error_msg = response.json().get("error_message", None)
+            if error_msg and len(error_msg) > 0:
+                return {
+                    "status": "error",
+                    "error": error_msg[0],
+                }
+            return {
+                "status": "error",
+                "error": f"Failed to add SDS to location with status {response.status_code}",
+                "instruction": "Failed to add SDS to location. Please verify the SDS and location."
+            }
+    except requests.exceptions.RequestException as e:
+        return {
+            "status": "error",
+            "error": f"Connection error: {str(e)}",
+            "instruction": "Failed to connect to location service. Please try again."
+        }
+
     
